@@ -131,15 +131,91 @@ export interface AuditLog {
 export interface Database {
   public: {
     Tables: {
-      profiles: { Row: Profile; Insert: Partial<Profile>; Update: Partial<Profile> };
-      categories: { Row: Category; Insert: Partial<Category>; Update: Partial<Category> };
-      articles: { Row: Article; Insert: Partial<Article>; Update: Partial<Article> };
-      festivities: { Row: Festivity; Insert: Partial<Festivity>; Update: Partial<Festivity> };
-      banners: { Row: Banner; Insert: Partial<Banner>; Update: Partial<Banner> };
-      comments: { Row: Comment; Insert: Partial<Comment>; Update: Partial<Comment> };
-      radio_settings: { Row: RadioSettings; Insert: Partial<RadioSettings>; Update: Partial<RadioSettings> };
-      radio_schedule: { Row: RadioSchedule; Insert: Partial<RadioSchedule>; Update: Partial<RadioSchedule> };
-      audit_logs: { Row: AuditLog; Insert: Partial<AuditLog>; Update: Partial<AuditLog> };
+      profiles: {
+        Row: Profile;
+        Insert: Partial<Profile> & { id: string; email: string; full_name: string };
+        Update: Partial<Profile>;
+        Relationships: [];
+      };
+      categories: {
+        Row: Category;
+        Insert: Partial<Category> & { name: string; slug: string };
+        Update: Partial<Category>;
+        Relationships: [];
+      };
+      articles: {
+        Row: Article;
+        Insert: Partial<Article> & { title: string; slug: string; excerpt: string; content_html: string };
+        Update: Partial<Article>;
+        Relationships: [];
+      };
+      festivities: {
+        Row: Festivity;
+        Insert: Partial<Festivity> & { name: string; scope: string; month: number; days: string; location: string; city: string; description: string };
+        Update: Partial<Festivity>;
+        Relationships: [];
+      };
+      banners: {
+        Row: Banner;
+        Insert: Partial<Banner> & { sponsor_name: string; image_url: string; target_url: string; position: string };
+        Update: Partial<Banner>;
+        Relationships: [];
+      };
+      comments: {
+        Row: Comment;
+        Insert: Partial<Comment> & { article_id: string; author_name: string; author_email: string; comment_text: string };
+        Update: Partial<Comment>;
+        Relationships: [];
+      };
+      radio_settings: {
+        Row: RadioSettings;
+        Insert: Partial<RadioSettings> & { stream_url: string };
+        Update: Partial<RadioSettings>;
+        Relationships: [];
+      };
+      radio_schedule: {
+        Row: RadioSchedule;
+        Insert: Partial<RadioSchedule> & { radio_settings_id: string; program_name: string; host_name: string; day_of_week: string; start_time: string; end_time: string };
+        Update: Partial<RadioSchedule>;
+        Relationships: [];
+      };
+      audit_logs: {
+        Row: AuditLog;
+        Insert: Partial<AuditLog> & { action: string; entity_type: string };
+        Update: Partial<AuditLog>;
+        Relationships: [];
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      increment_article_views: {
+        Args: { article_id: string };
+        Returns: void;
+      };
+      get_my_role: {
+        Args: Record<PropertyKey, never>;
+        Returns: AppRole;
+      };
+      is_super_admin: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      can_publish: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      can_write_news: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+    };
+    Enums: {
+      app_role: AppRole;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
     };
   };
 }
