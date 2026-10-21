@@ -1,21 +1,61 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, X, FileText } from "lucide-react";
-import { NewsService } from "@/services/news.service";
+import { Search, X, FileText, Loader2 } from "lucide-react";
 import ArticleCard from "@/components/public/ArticleCard";
+
+interface SearchResult {
+  id: string;
+  title: string;
+  excerpt: string;
+  author: string;
+  date: string;
+  category: string;
+  imageUrl?: string;
+  readTime: string;
+  slug: string;
+  section: string;
+  sectionSlug: string;
+  isBreaking?: boolean;
+}
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const [query, setQuery] = useState(initialQuery);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const quickTerms = ["Jauja", "Aeropuerto", "Tunantada", "Papa Nativa", "Hospital Olavegoya", "Copa Perú"];
 
-  const results = useMemo(() => {
-    return NewsService.searchArticles(query);
-  }, [query]);
+  const performSearch = useCallback(async (q: string) => {
+    if (!q.trim()) {
+      setResults([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setResults(data);
+      }
+    } catch {
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Debounce de 300ms para búsqueda en tiempo real
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      performSearch(query);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query, performSearch]);
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
@@ -75,6 +115,11 @@ function SearchContent() {
           <div className="bg-white p-12 text-center rounded-sm border border-gray-200 max-w-md mx-auto text-gray-400">
             <FileText className="w-12 h-12 mx-auto mb-3 opacity-40" />
             <p className="text-sm">Escribe un término en el recuadro superior para iniciar la búsqueda.</p>
+          </div>
+        ) : isLoading ? (
+          <div className="bg-white p-12 text-center rounded-sm border border-gray-200 max-w-md mx-auto">
+            <Loader2 className="w-8 h-8 mx-auto mb-3 text-amber-500 animate-spin" />
+            <p className="text-sm text-gray-500">Buscando noticias...</p>
           </div>
         ) : (
           <div>

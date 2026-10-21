@@ -1,17 +1,31 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Clock, User, TrendingUp, Camera, Sparkles, MapPin, ChevronRight } from "lucide-react";
+import { NewsService } from "@/services/news.service";
 import {
-  heroNews,
-  secondaryNews,
-  jaujaNews,
-  nacionalNews,
-  internacionalNews,
-  opinionPieces,
   jaujaPhotoGallery,
 } from "@/lib/mock-data";
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Cargar datos de Supabase (con fallback a mock)
+  const allArticles = await NewsService.getAllArticles();
+
+  // Extraer secciones del feed
+  const heroNews = allArticles[0];
+  const secondaryNews = allArticles.slice(1, 3);
+  const jaujaNews = allArticles.filter((a) => a.sectionSlug === "jauja-y-region").slice(0, 4);
+  const nacionalNews = allArticles.filter((a) => a.sectionSlug === "nacional").slice(0, 3);
+  const internacionalNews = allArticles.filter((a) => a.sectionSlug === "internacional").slice(0, 3);
+  const opinionArticles = allArticles.filter((a) => a.sectionSlug === "opinion").slice(0, 3);
+
+  if (!heroNews) {
+    return (
+      <main className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-gray-500 text-sm">Cargando portada...</p>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-white">
       
@@ -22,7 +36,7 @@ export default function HomePage() {
           {/* Lado Izquierdo: Noticia Central Hero + 2 Secundarias (65%) */}
           <div className="lg:w-[65%] flex flex-col gap-8">
             <article className="group cursor-pointer">
-              <Link href={`/economia-regional/${heroNews.slug}`} className="block">
+              <Link href={`/${heroNews.sectionSlug}/${heroNews.slug}`} className="block">
                 <div className="relative w-full h-[380px] sm:h-[450px] mb-4 overflow-hidden rounded-sm bg-slate-900 shadow-md">
                   {heroNews.imageUrl && (
                     <Image
@@ -47,7 +61,7 @@ export default function HomePage() {
 
                   <div className="absolute bottom-4 left-4 right-4 text-white z-10 hidden sm:block">
                     <span className="text-amber-400 text-xs font-bold uppercase tracking-wider block mb-1">
-                      Infraestructura y Conectividad
+                      {heroNews.section}
                     </span>
                     <p className="text-sm text-gray-200 line-clamp-2 drop-shadow-sm font-sans">
                       {heroNews.excerpt}
@@ -84,7 +98,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t-2 border-gray-100">
               {secondaryNews.map((news) => (
                 <article key={news.id} className="group cursor-pointer flex flex-col justify-between">
-                  <Link href={`/${news.category.toLowerCase()}/${news.slug}`} className="block">
+                  <Link href={`/${news.sectionSlug}/${news.slug}`} className="block">
                     <div className="relative w-full h-52 mb-3 overflow-hidden rounded-sm bg-gray-100 shadow-xs">
                       {news.imageUrl && (
                         <Image
@@ -135,7 +149,7 @@ export default function HomePage() {
               <div className="flex flex-col gap-4">
                 {jaujaNews.map((news) => (
                   <article key={news.id} className="group cursor-pointer flex gap-3.5 pb-4 border-b border-gray-200/80 last:border-0 last:pb-0">
-                    <Link href={`/${news.category.toLowerCase()}/${news.slug}`} className="relative w-24 h-24 shrink-0 overflow-hidden rounded-xs bg-gray-200 shadow-xs">
+                    <Link href={`/${news.sectionSlug}/${news.slug}`} className="relative w-24 h-24 shrink-0 overflow-hidden rounded-xs bg-gray-200 shadow-xs">
                       {news.imageUrl && (
                         <Image
                           src={news.imageUrl}
@@ -152,7 +166,7 @@ export default function HomePage() {
                         <span className="text-[10px] font-bold text-red-700 uppercase tracking-wider block mb-1">
                           {news.category}
                         </span>
-                        <Link href={`/${news.category.toLowerCase()}/${news.slug}`}>
+                        <Link href={`/${news.sectionSlug}/${news.slug}`}>
                           <h3 className="font-serif text-sm font-bold text-[#0A192F] leading-tight line-clamp-3 group-hover:text-red-700 transition-colors">
                             {news.title}
                           </h3>
@@ -331,7 +345,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Columna 3: Opinión y Columnistas con Fotos de Perfil */}
+          {/* Columna 3: Opinión y Columnistas */}
           <div className="md:pl-8 pt-8 md:pt-0">
             <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-amber-600">
               <div className="flex items-center gap-2">
@@ -344,38 +358,40 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-col gap-4">
-              {opinionPieces.map((piece) => (
+              {opinionArticles.map((piece) => (
                 <article
                   key={piece.id}
                   className="group cursor-pointer bg-slate-50 p-4 rounded-xs border border-gray-200 hover:border-amber-400 transition-all hover:shadow-xs"
                 >
-                  <div className="flex items-center gap-3 mb-2.5">
-                    <div className="relative w-11 h-11 rounded-full overflow-hidden shrink-0 border-2 border-amber-500 shadow-xs">
-                      {piece.avatarUrl ? (
-                        <Image
-                          src={piece.avatarUrl}
-                          alt={piece.author}
-                          fill
-                          sizes="44px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-[#0A192F] text-white flex items-center justify-center font-bold text-xs">
-                          {piece.initials}
-                        </div>
-                      )}
+                  <Link href={`/opinion/${piece.slug}`}>
+                    <div className="flex items-center gap-3 mb-2.5">
+                      <div className="relative w-11 h-11 rounded-full overflow-hidden shrink-0 border-2 border-amber-500 shadow-xs">
+                        {piece.authorAvatar ? (
+                          <Image
+                            src={piece.authorAvatar}
+                            alt={piece.author}
+                            fill
+                            sizes="44px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-[#0A192F] text-white flex items-center justify-center font-bold text-xs">
+                            {piece.author.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-xs text-navy-950 group-hover:text-red-700 transition-colors">
+                          {piece.author}
+                        </h4>
+                        <p className="text-[10px] text-gray-500 font-sans">{piece.authorRole}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-xs text-navy-950 group-hover:text-red-700 transition-colors">
-                        {piece.author}
-                      </h4>
-                      <p className="text-[10px] text-gray-500 font-sans">{piece.role}</p>
-                    </div>
-                  </div>
 
-                  <h3 className="font-serif text-sm font-bold text-[#0A192F] italic leading-tight group-hover:text-red-700 transition-colors">
-                    &ldquo;{piece.title}&rdquo;
-                  </h3>
+                    <h3 className="font-serif text-sm font-bold text-[#0A192F] italic leading-tight group-hover:text-red-700 transition-colors">
+                      &ldquo;{piece.title}&rdquo;
+                    </h3>
+                  </Link>
                 </article>
               ))}
             </div>

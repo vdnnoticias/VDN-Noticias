@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Clock, User, TrendingUp, ChevronRight, Tag, Radio, ArrowRight } from "lucide-react";
-import { NewsService, mockComments } from "@/services/news.service";
+import { NewsService } from "@/services/news.service";
 import ShareButtons from "@/components/public/ShareButtons";
 import CommentsSection from "@/components/public/CommentsSection";
 import ArticleCard from "@/components/public/ArticleCard";
@@ -17,7 +17,7 @@ interface ArticlePageProps {
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const { slug } = await params;
-  const article = NewsService.getArticleBySlug(slug);
+  const article = await NewsService.getArticleBySlug(slug);
 
   if (!article) {
     return {
@@ -39,15 +39,17 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug } = await params;
-  const article = NewsService.getArticleBySlug(slug);
+  const article = await NewsService.getArticleBySlug(slug);
 
   if (!article) {
     notFound();
   }
 
-  const comments = mockComments[slug] || [];
-  const relatedArticles = NewsService.getRelatedArticles(slug, article.sectionSlug, 3);
-  const mostRead = NewsService.getMostReadArticles(5);
+  const [comments, relatedArticles, mostRead] = await Promise.all([
+    NewsService.getComments(slug),
+    NewsService.getRelatedArticles(slug, article.sectionSlug, 3),
+    NewsService.getMostReadArticles(5),
+  ]);
 
   return (
     <article className="min-h-screen bg-white py-8">

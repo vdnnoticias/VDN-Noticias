@@ -24,10 +24,11 @@ export async function generateMetadata({ params }: SectionPageProps): Promise<Me
 export default async function SectionPage({ params }: SectionPageProps) {
   const { section } = await params;
   
-  // Validar si la sección es turismo y redirigir o renderizar si fuera el caso
   const sectionMeta = NewsService.getSectionMeta(section);
-  const articles = NewsService.getArticlesBySection(section);
-  const mostRead = NewsService.getMostReadArticles(5);
+  const [articles, mostRead] = await Promise.all([
+    NewsService.getArticlesBySection(section),
+    NewsService.getMostReadArticles(5),
+  ]);
 
   const featured = articles[0];
   const remainingArticles = articles.slice(1);
