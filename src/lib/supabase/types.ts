@@ -1,29 +1,22 @@
-export interface Article {
+export type AppRole =
+  | 'super_admin'      // Director General / Dueño ("Principal de principales")
+  | 'editor_in_chief'  // Jefe de Redacción / Editor General
+  | 'journalist'       // Periodista / Redactor de planta
+  | 'columnist'        // Columnista de Opinión
+  | 'radio_operator'   // Operador / Conductor de Radio
+  | 'moderator';       // Moderador de Comentarios de Lectores
+
+export interface Profile {
   id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  content_html: string;
-  cover_image_url: string | null;
-  section: 'local' | 'nacional' | 'internacional' | 'opinion' | 'deportes' | 'cultura';
-  is_featured: boolean;
-  is_breaking: boolean;
-  status: 'draft' | 'published' | 'archived';
-  published_at: string | null;
-  author_id: string;
-  category_id: string | null;
+  email: string;
+  full_name: string;
+  role: AppRole;
+  avatar_url: string | null;
+  bio: string | null;
+  phone: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  reading_time_minutes: number;
-}
-
-export interface Author {
-  id: string;
-  full_name: string;
-  role: string;
-  avatar_url: string | null;
-  bio: string;
-  created_at: string;
 }
 
 export interface Category {
@@ -31,15 +24,49 @@ export interface Category {
   name: string;
   slug: string;
   description: string | null;
+  order_index: number;
+  is_active: boolean;
+  created_at: string;
 }
 
-export interface Comment {
+export interface Article {
   id: string;
-  article_id: string;
-  author_name: string;
-  author_email: string;
-  comment_text: string;
-  is_approved: boolean;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content_html: string;
+  cover_image_url: string | null;
+  section: string;
+  category_id: string | null;
+  author_id: string | null;
+  reviewed_by: string | null;
+  is_featured: boolean;
+  is_breaking: boolean;
+  status: 'draft' | 'review' | 'published' | 'archived';
+  published_at: string | null;
+  views_count: number;
+  reading_time_minutes: number;
+  tags: string[];
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Festivity {
+  id: string;
+  name: string;
+  scope: 'mantaro' | 'junin' | 'nacional' | 'internacional';
+  month: number;
+  days: string;
+  location: string;
+  city: string;
+  description: string;
+  history: string | null;
+  image_url: string | null;
+  heritage_status: string | null;
+  traditional_dishes: string[];
+  tips_for_tourists: string | null;
+  is_highlight: boolean;
   created_at: string;
 }
 
@@ -51,9 +78,20 @@ export interface Banner {
   position: 'header_top' | 'sidebar' | 'in_feed' | 'footer';
   is_active: boolean;
   start_date: string;
-  end_date: string;
+  end_date: string | null;
   impressions: number;
   clicks: number;
+  created_at: string;
+}
+
+export interface Comment {
+  id: string;
+  article_id: string;
+  author_name: string;
+  author_email: string;
+  comment_text: string;
+  is_approved: boolean;
+  reviewed_by: string | null;
   created_at: string;
 }
 
@@ -63,6 +101,9 @@ export interface RadioSettings {
   radio_name: string;
   slogan: string;
   is_broadcasting: boolean;
+  current_program: string | null;
+  current_host: string | null;
+  updated_at: string;
 }
 
 export interface RadioSchedule {
@@ -73,18 +114,32 @@ export interface RadioSchedule {
   day_of_week: string;
   start_time: string;
   end_time: string;
+  description: string | null;
+  created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  user_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
 }
 
 export interface Database {
   public: {
     Tables: {
-      articles: { Row: Article; Insert: Partial<Article>; Update: Partial<Article> };
-      authors: { Row: Author; Insert: Partial<Author>; Update: Partial<Author> };
+      profiles: { Row: Profile; Insert: Partial<Profile>; Update: Partial<Profile> };
       categories: { Row: Category; Insert: Partial<Category>; Update: Partial<Category> };
-      comments: { Row: Comment; Insert: Partial<Comment>; Update: Partial<Comment> };
+      articles: { Row: Article; Insert: Partial<Article>; Update: Partial<Article> };
+      festivities: { Row: Festivity; Insert: Partial<Festivity>; Update: Partial<Festivity> };
       banners: { Row: Banner; Insert: Partial<Banner>; Update: Partial<Banner> };
+      comments: { Row: Comment; Insert: Partial<Comment>; Update: Partial<Comment> };
       radio_settings: { Row: RadioSettings; Insert: Partial<RadioSettings>; Update: Partial<RadioSettings> };
-      radio_schedules: { Row: RadioSchedule; Insert: Partial<RadioSchedule>; Update: Partial<RadioSchedule> };
+      radio_schedule: { Row: RadioSchedule; Insert: Partial<RadioSchedule>; Update: Partial<RadioSchedule> };
+      audit_logs: { Row: AuditLog; Insert: Partial<AuditLog>; Update: Partial<AuditLog> };
     };
   };
 }
