@@ -116,7 +116,30 @@ CREATE TABLE IF NOT EXISTS public.radio_schedule (
 );
 
 -- ==============================================================================
--- 8. POLÍTICAS DE SEGURIDAD (ROW LEVEL SECURITY - RLS)
+-- 8. TABLA: FESTIVIDADES Y TURISMO (Calendario Dinamico Regional e Internacional)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.festivities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(200) NOT NULL,
+    scope VARCHAR(50) NOT NULL CHECK (scope IN ('mantaro', 'junin', 'nacional', 'internacional')),
+    month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+    days VARCHAR(100) NOT NULL,
+    location VARCHAR(200) NOT NULL,
+    city VARCHAR(150) NOT NULL,
+    description TEXT NOT NULL,
+    history TEXT,
+    image_url TEXT,
+    heritage_status VARCHAR(150),
+    traditional_dishes TEXT[] DEFAULT '{}',
+    tips_for_tourists TEXT,
+    is_highlight BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_festivities_month_scope ON public.festivities(month, scope);
+
+-- ==============================================================================
+-- 9. POLÍTICAS DE SEGURIDAD (ROW LEVEL SECURITY - RLS)
 -- ==============================================================================
 
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
@@ -126,6 +149,7 @@ ALTER TABLE public.banners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.radio_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.radio_schedule ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.festivities ENABLE ROW LEVEL SECURITY;
 
 -- Lectura publica para contenido publicado
 CREATE POLICY "Lectura publica de categorias" ON public.categories FOR SELECT USING (true);
@@ -135,6 +159,7 @@ CREATE POLICY "Lectura publica de banners activos" ON public.banners FOR SELECT 
 CREATE POLICY "Lectura publica de comentarios aprobados" ON public.comments FOR SELECT USING (is_approved = true);
 CREATE POLICY "Lectura publica de radio" ON public.radio_settings FOR SELECT USING (true);
 CREATE POLICY "Lectura publica de programacion radial" ON public.radio_schedule FOR SELECT USING (true);
+CREATE POLICY "Lectura publica de festividades" ON public.festivities FOR SELECT USING (true);
 
 -- Insercion publica de comentarios (pasan a moderacion con is_approved = false)
 CREATE POLICY "Insercion de comentarios por lectores" ON public.comments FOR INSERT WITH CHECK (is_approved = false);
@@ -147,9 +172,26 @@ CREATE POLICY "Admin full access banners" ON public.banners FOR ALL TO authentic
 CREATE POLICY "Admin full access comentarios" ON public.comments FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Admin full access radio" ON public.radio_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Admin full access programacion" ON public.radio_schedule FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Admin full access festividades" ON public.festivities FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- ==============================================================================
--- 9. DATOS INICIALES (SEED DATA)
+-- 10. BUCKETS DE ALMACENAMIENTO (STORAGE PUBLICO PARA IMAGENES)
+-- ==============================================================================
+INSERT INTO storage.buckets (id, name, public) VALUES 
+('articles', 'articles', true),
+('banners', 'banners', true),
+('avatars', 'avatars', true),
+('festivities', 'festivities', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Politica para lectura publica de imagenes en Storage
+CREATE POLICY "Acceso publico de lectura a imagenes" ON storage.objects FOR SELECT USING (bucket_id IN ('articles', 'banners', 'avatars', 'festivities'));
+
+-- Politica para que usuarios autenticados puedan subir imagenes
+CREATE POLICY "Subida de imagenes para admin" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id IN ('articles', 'banners', 'avatars', 'festivities'));
+
+-- ==============================================================================
+-- 11. DATOS INICIALES (SEED DATA)
 -- ==============================================================================
 
 -- Categorias base
